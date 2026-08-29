@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling>=1.25", "hatch-vcs>=0.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "radioskysims-radiotelescope"
+version = "0.1.0"
+description = "Radiotelescópio do RadioSkySim: pointing, antena, backend/spectrometer e painel."
+readme = "README.md"
+requires-python = ">=3.11,<=3.14"
+authors = [
+  { name = "Luciano Barosi", email = "lbarosi@df.ufcg.edu.br" },
+]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "numpy>=2.3",
+  "pydantic>=2",
+  "panel>=1.7.0",
+  "radioskysims-core",
+  "radioskysims-viz",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+]
+
+[project.urls]
+Homepage = "https://github.com/barosil/RadioSkySim"
+"Bug Tracker" = "https://github.com/barosil/RadioSkySim/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/radioskysims_radiotelescope"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = [
+  "error",
+  "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+testpaths = ["tests"]
