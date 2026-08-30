@@ -42,7 +42,7 @@ class RadiotelescopePanel(PanelApplication):
         self.output = pn.pane.Str("")
         return pn.Column("# 🔭 Radiotelescope Configurator", self.output)
 
-    def _create_radiotelescope(self, event=None):
+    def _create_radiotelescope(self, _event=None):
         freq_min, freq_max = self.freq_range_slider.value
         beam_id = self.beam_selector.value
 

@@ -6,7 +6,6 @@ Copyright BINGO Collaboration
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from radioskysims_core.config.config_loader import build_radiotelescope_from_settings
 from radioskysims_core.domain.common import FrequencyRange
