@@ -161,10 +161,7 @@ class Antennas(BaseModel):
     def __repr__(self) -> str:
         names = ", ".join(repr(a.name) for a in self.antennas)
         props = ", ".join(self.available_properties())
-        return (
-            f"Antennas(n={len(self.antennas)}, names=[{names}])\n"
-            f"Available properties: {props}"
-        )
+        return f"Antennas(n={len(self.antennas)}, names=[{names}])\nAvailable properties: {props}"
 
     def __str__(self) -> str:
         # pydantic v2 define __str__ separadamente; delega para o __repr__
