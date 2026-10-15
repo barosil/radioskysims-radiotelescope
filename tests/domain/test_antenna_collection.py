@@ -13,7 +13,6 @@ Last modified: 2026-08-30
 from __future__ import annotations
 
 import pytest
-
 from radioskysims_core.domain.common import FrequencyRange
 from radioskysims_radiotelescope.domain.radiotelescope.antenna import (
     Antenna,
@@ -112,7 +111,9 @@ class TestGetProperties:
         hv = pytest.importorskip("holoviews")
         plot = antennas.get_properties("FWHM").view()
         assert isinstance(plot, hv.Overlay)
-        assert len(plot) == 1  # uma curva por antena
+        # Uma curva por antena (a view sobrepõe Curve * Scatter p/ marcadores).
+        curves = [el for el in plot if isinstance(el, hv.Curve)]
+        assert len(curves) == 1
 
     def test_view_beam_pattern_five_curves(self) -> None:
         antennas = Antennas(
@@ -123,3 +124,19 @@ class TestGetProperties:
         assert isinstance(plot, hv.Overlay)
         # 5 frequências espaçadas na faixa (perfil analítico gaussiano)
         assert len(plot) == 5
+
+
+class TestGainDbiField:
+    """``gain_dbi`` é campo do modelo, populado na montagem do conjunto."""
+
+    def test_is_declared_field(self) -> None:
+        assert "gain_dbi" in Antenna.model_fields
+
+    def test_populated_on_construction(self) -> None:
+        ant = _make_antenna("horn", beam_width_deg=15.0)
+        assert ant.gain_dbi is not None
+        assert ant.gain_dbi == pytest.approx(22.09, rel=1e-2)
+
+    def test_explicit_value_is_preserved(self) -> None:
+        ant = Antenna(name="horn", gain_dbi=30.0)
+        assert ant.gain_dbi == pytest.approx(30.0)

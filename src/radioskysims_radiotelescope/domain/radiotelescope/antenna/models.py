@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import math
 
-from pydantic import BaseModel, ConfigDict, Field
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from radioskysims_core.domain.common import FrequencyRange
+
 from radioskysims_radiotelescope.domain.radiotelescope.backend.spectrometer.models import (
     SpectrometerBackend,
 )
@@ -75,6 +75,14 @@ class Antenna(BaseModel):
     beam: BeamSpec | None = None
     backend: SpectrometerBackend | None = None
 
+    gain_dbi: float | None = Field(
+        default=None,
+        description=(
+            "Ganho direcional (dBi). Populado na montagem do conjunto de "
+            "informações quando não informado explicitamente."
+        ),
+    )
+
     # ── Propriedades físicas derivadas ────────────────────────────────
     # Fator de conversão sigma→FWHM para perfil gaussiano:
     #   FWHM = 2 * sqrt(2 * ln(2)) * sigma ≈ 2.35482 * sigma
@@ -97,17 +105,20 @@ class Antenna(BaseModel):
             return width_deg * self._GAUSSIAN_FWHM_FACTOR
         return width_deg
 
-    @property
-    def gain_dbi(self) -> float | None:
-        """Ganho direcional estimado (dBi).
+    @model_validator(mode="after")
+    def _populate_gain_dbi(self) -> Antenna:
+        """Popula ``gain_dbi`` na montagem quando não informado (None)."""
+        if self.gain_dbi is None:
+            self.gain_dbi = self._estimate_gain_dbi()
+        return self
 
-        Prioriza a área efetiva quando disponível (``G = 4π A_eff / λ²``
-        com ``λ`` na frequência central). Sem área efetiva, estima pelo
-        ângulo sólido gaussiano do feixe (``Ω ≈ 1.133·θ²``, com ``θ`` o
-        FWHM em radianos) e ``G ≈ 4π / Ω``.
-        Retorna ``None`` quando não há dados suficientes.
+    def _estimate_gain_dbi(self) -> float | None:
+        """Estimativa de ganho (dBi) a partir da área efetiva ou do FWHM.
+
+        Prioriza ``G = 4π A_eff / λ²`` (frequência central); sem área efetiva,
+        estima pelo ângulo sólido gaussiano do feixe (``Ω ≈ 1.133·θ²``) e
+        ``G ≈ 4π / Ω``. Retorna ``None`` sem dados suficientes.
         """
-        # 1) Área efetiva + frequência central → G = 4π A_eff / λ²
         if self.effective_area_m2 is not None and self.frequency_range is not None:
             fc_mhz = (self.frequency_range.min_mhz + self.frequency_range.max_mhz) / 2.0
             lam_m = 299_792_458.0 / (fc_mhz * 1e6)  # c / f (metros)
@@ -115,7 +126,6 @@ class Antenna(BaseModel):
             if gain > 0.0:
                 return 10.0 * math.log10(gain)
 
-        # 2) Fallback: ângulo sólido do feixe → G ≈ 4π / (1.133 θ²)
         fwhm_deg = self.fwhm_deg
         if fwhm_deg is None or fwhm_deg <= 0.0:
             return None
